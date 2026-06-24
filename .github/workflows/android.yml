@@ -13,40 +13,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3. Generate Gradle Wrapper files on the fly
+      # This fixes the "Could not find GradleWrapperMain" error
       - name: Setup Gradle Wrapper
         run: |
-          # Create the wrapper files structure
           mkdir -p gradle/wrapper
-          
-          # Create the properties file
           cat > gradle/wrapper/gradle-wrapper.properties << 'PROPS'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
           zipStoreBase=GRADLE_USER_HOME
           zipStorePath=wrapper/dists
           PROPS
           
-          # Generate a minimal gradlew script on the fly to bypass the missing file error
           cat > gradlew << 'EOF'
           #!/bin/bash
           gradle "$@"
           EOF
-          
           chmod +x gradlew
 
+      # 4. Build debug APK
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      # 5. Upload debug APK artifact
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
