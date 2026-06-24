@@ -22,11 +22,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # This magic step sets up Gradle automatically even if your repo is missing the wrapper files!
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
 
-      # We run the build via the system's global gradle command instead of the local wrapper
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
 
