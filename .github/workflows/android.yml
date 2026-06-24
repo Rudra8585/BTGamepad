@@ -1,6 +1,6 @@
 name: Android APK Build
 
-"on":
+on:
   push:
     branches: [ "main", "master" ]
   pull_request:
@@ -22,15 +22,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Use the official Gradle action — it installs Gradle + wrapper automatically
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.4'
-
-      - name: Write Gradle wrapper properties
+      - name: Setup Gradle Wrapper
         run: |
+          # Create the wrapper files structure
           mkdir -p gradle/wrapper
+          
+          # Create the properties file
           cat > gradle/wrapper/gradle-wrapper.properties << 'PROPS'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
@@ -38,9 +35,14 @@ jobs:
           zipStoreBase=GRADLE_USER_HOME
           zipStorePath=wrapper/dists
           PROPS
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          
+          # Generate a minimal gradlew script on the fly to bypass the missing file error
+          cat > gradlew << 'EOF'
+          #!/bin/bash
+          gradle "$@"
+          EOF
+          
+          chmod +x gradlew
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
