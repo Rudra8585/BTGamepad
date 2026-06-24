@@ -5,7 +5,6 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  # Allow manual trigger from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -14,59 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout source ──────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Set up JDK 17 ───────────────────────────────────────────────
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      # ── 3. Grant execute permission to Gradle wrapper ──────────────────
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      # This magic step sets up Gradle automatically even if your repo is missing the wrapper files!
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      # ── 4. Cache Gradle dependencies ───────────────────────────────────
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      # ── 5. Build debug APK ─────────────────────────────────────────────
+      # We run the build via the system's global gradle command instead of the local wrapper
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
-      # ── 6. Upload APK artifact ─────────────────────────────────────────
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: BTGamepad-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/build/outputs/apk/debug/*.apk"
           retention-days: 30
           if-no-files-found: error
-
-      # ── 7. (Optional) Build release APK ───────────────────────────────
-      #    Uncomment and add your keystore secrets to enable signed releases.
-      #
-      # - name: Build release APK
-      #   run: ./gradlew assembleRelease
-      #   env:
-      #     SIGNING_KEY_ALIAS:       ${{ secrets.SIGNING_KEY_ALIAS }}
-      #     SIGNING_KEY_PASSWORD:    ${{ secrets.SIGNING_KEY_PASSWORD }}
-      #     SIGNING_STORE_PASSWORD:  ${{ secrets.SIGNING_STORE_PASSWORD }}
-      #
-      # - name: Upload release APK
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: BTGamepad-release-${{ github.run_number }}
-      #     path: app/build/outputs/apk/release/app-release.apk
-      #     retention-days: 30
